@@ -1,0 +1,64 @@
+# =============================================================================
+# ProspecMan — .gitignore
+# =============================================================================
+
+# --- Segredos e variáveis de ambiente ---
+.env
+.env.local
+.env.*.local
+mobile/.env
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# --- Node / npm ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Next.js ---
+web/.next/
+web/out/
+web/.vercel/
+
+# --- Expo / React Native ---
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# --- Outputs gerados ---
+projects/
+*.mp3
+*.wav
+*.m4a
+*.aac
+
+# --- TypeScript build cache ---
+*.tsbuildinfo
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+desktop.ini

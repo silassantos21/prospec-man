@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  /* Azul da marca — extraído das logos */
+  --color-brand-300: #41E2FF;
+  --color-brand-400: #1EB2FF;
+  --color-brand-500: #0E86FD;
+  --color-brand-600: #0361E3;
+  --color-brand-700: #0247B8;
+  --color-brand-800: #012E90;
+  --color-brand-900: #012641;
+
+  /* Superfícies escuras — azul-marinho da marca */
+  --color-surface-950: #010414;
+  --color-surface-900: #040E1A;
+  --color-surface-800: #081727;
+  --color-surface-700: #0F2338;
+  --color-surface-600: #172E4A;
+  --color-surface-500: #1E3C5C;
+}
+
+:root {
+  --background: #010414;
+  --foreground: #d9eaf8;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}

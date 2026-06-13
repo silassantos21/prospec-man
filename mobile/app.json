@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "ProspecMan",
+    "slug": "prospecman",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "ProspecMan precisa do microfone para gravar o briefing do projeto.",
+        "NSPhotoLibraryUsageDescription": "ProspecMan precisa acessar sua galeria para enviar imagens de referência."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#010414",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-audio"
+    ]
+  }
+}
