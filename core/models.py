@@ -41,7 +41,7 @@ class TechStack(BaseModel):
         optional_fields = ["frontend", "backend", "database", "auth", "cache", "monitoring", "ai_ml"]
         for field in optional_fields:
             val = data.get(field)
-            if isinstance(val, dict) and "primary" not in val:
+            if isinstance(val, dict) and not val.get("primary"):
                 data[field] = None
         return data
 
