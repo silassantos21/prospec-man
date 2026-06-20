@@ -1,7 +1,11 @@
 import asyncio
+import io
 import os
+import smtplib
 import tempfile
+import zipfile
 from datetime import datetime
+from email.message import EmailMessage
 from pathlib import Path
 from typing import List, Optional
 
@@ -16,6 +20,29 @@ from core.project_generator import create_project
 from core.web_scraper import format_scraped_content, scrape_urls
 
 router = APIRouter(tags=["projects"])
+
+
+def _send_project_zip(project_path: Path, project_name: str, to_email: str, from_user: str, from_password: str) -> None:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in project_path.rglob("*"):
+            if f.is_file():
+                zf.write(f, f.relative_to(project_path.parent))
+    buf.seek(0)
+
+    msg = EmailMessage()
+    msg["Subject"] = f"ProspecMan: {project_name}"
+    msg["From"] = from_user
+    msg["To"] = to_email
+    msg.set_content(
+        f'Seu projeto "{project_name}" foi gerado pelo ProspecMan.\n\n'
+        "Em anexo: estrutura completa do projeto (README, CLAUDE.md, arquivos de configuração)."
+    )
+    msg.add_attachment(buf.read(), maintype="application", subtype="zip", filename=f"{project_name}.zip")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(from_user, from_password)
+        smtp.send_message(msg)
 
 
 class ProjectResponse(BaseModel):
@@ -41,6 +68,7 @@ async def create_project_endpoint(
     language: str = Form(default="pt"),
     open_vscode: bool = Form(default=False),
     images: List[UploadFile] = File(default=[]),
+    email: Optional[str] = Form(None),
 ):
     """
     Gera uma estrutura de projeto completa a partir de briefing.
@@ -121,6 +149,19 @@ async def create_project_endpoint(
             open_vscode,
             settings.vscode_command,
         )
+
+        if email and settings.email_user and settings.email_password:
+            try:
+                await asyncio.to_thread(
+                    _send_project_zip,
+                    project_path,
+                    plan.project_slug,
+                    email,
+                    settings.email_user,
+                    settings.email_password,
+                )
+            except Exception:
+                pass  # email é não-fatal: projeto já foi gerado
 
         return ProjectResponse(
             success=True,

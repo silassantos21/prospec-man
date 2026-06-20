@@ -12,7 +12,7 @@ const LOADING_STEPS = [
   "Coletando dados das URLs...",
   "Analisando imagens com Claude Vision...",
   "Gerando plano com Claude...",
-  "Criando estrutura do projeto no PC...",
+  "Finalizando e enviando projeto...",
 ];
 
 // Percentual acumulado esperado ao final de cada etapa (baseado nas durações)
@@ -31,6 +31,7 @@ export default function FormScreen({ onResult }: Props) {
   const [transcriptText, setTranscriptText] = useState("");
   const [urls, setUrls] = useState(["", "", ""]);
   const [images, setImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [email, setEmail] = useState("");
   const [openVscode, setOpenVscode] = useState(false);
   const [appState, setAppState] = useState<AppState>("idle");
   const [currentStep, setCurrentStep] = useState(0);
@@ -117,6 +118,7 @@ export default function FormScreen({ onResult }: Props) {
 
     formData.append("language", "pt");
     formData.append("open_vscode", String(openVscode));
+    if (email.trim()) formData.append("email", email.trim());
 
     // XMLHttpRequest suporta { uri, type, name } para arquivos locais no React Native
     // fetch nativo do RN 0.85+ não suporta esse padrão (throws "Unsupported FormDataPart")
@@ -254,6 +256,21 @@ export default function FormScreen({ onResult }: Props) {
             ))}
           </View>
         )}
+      </View>
+
+      {/* E-mail */}
+      <View style={styles.section}>
+        <Text style={styles.label}>📧 E-mail para receber o projeto (ZIP)</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="seu@email.com (opcional)"
+          placeholderTextColor={C.textMuted}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
       </View>
 
       {/* VS Code toggle */}

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     default_language: str = Field(default="pt")
     usd_to_brl_rate: float = Field(default=5.70)
     vscode_command: str = Field(default="code")
+    email_user: str = Field(default="")
+    email_password: str = Field(default="")
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
