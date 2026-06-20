@@ -14,6 +14,7 @@
       }
     },
     "android": {
+      "package": "com.silassantos.prospecman",
       "adaptiveIcon": {
         "backgroundColor": "#010414",
         "foregroundImage": "./assets/android-icon-foreground.png",
