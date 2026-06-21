@@ -26,9 +26,12 @@ const STACK_LABELS: Record<string, string> = {
 interface Props {
   result: Record<string, unknown>;
   onNew: () => void;
+  onHistory: () => void;
+  showBack?: boolean;
+  onBack?: () => void;
 }
 
-export default function ResultScreen({ result, onNew }: Props) {
+export default function ResultScreen({ result, onNew, onHistory, showBack, onBack }: Props) {
   const r = result as unknown as Result;
   const plan = r.plan;
   const stackEntries = Object.entries(plan.tech_stack).filter(([, v]) => v != null) as [string, TechCat][];
@@ -106,10 +109,21 @@ export default function ResultScreen({ result, onNew }: Props) {
         <Text style={styles.pathValue}>{r.project_path}</Text>
       </View>
 
-      {/* Novo projeto */}
-      <TouchableOpacity style={styles.newBtn} onPress={onNew}>
-        <Text style={styles.newBtnTxt}>+ Novo Projeto</Text>
-      </TouchableOpacity>
+      {/* Ações */}
+      {showBack ? (
+        <TouchableOpacity style={styles.newBtn} onPress={onBack}>
+          <Text style={styles.newBtnTxt}>← Voltar ao Histórico</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={[styles.newBtn, { flex: 1 }]} onPress={onNew}>
+            <Text style={styles.newBtnTxt}>+ Novo Projeto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.historyBtn} onPress={onHistory}>
+            <Text style={styles.historyBtnTxt}>📋</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={{ height: 32 }} />
     </ScrollView>
@@ -181,6 +195,7 @@ const styles = StyleSheet.create({
   pathLabel: { fontSize: 12, color: C.textMuted },
   pathValue: { fontSize: 11, color: C.brand400, fontFamily: "monospace" },
 
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   newBtn: {
     backgroundColor: C.brand600,
     borderRadius: 14,
@@ -189,4 +204,15 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   newBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  historyBtn: {
+    backgroundColor: C.surface800,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.surface700,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  historyBtnTxt: { fontSize: 22 },
 });

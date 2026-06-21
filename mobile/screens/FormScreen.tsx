@@ -6,6 +6,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import AudioRecorder from "../components/AudioRecorder";
 import { API_URL, C } from "../constants";
+import { saveEmail, loadEmail } from "../utils/storage";
 
 const LOADING_STEPS = [
   "Transcrevendo áudio com Whisper...",
@@ -23,15 +24,18 @@ type AppState = "idle" | "loading" | "error";
 
 interface Props {
   onResult: (data: Record<string, unknown>) => void;
+  onHistory: () => void;
 }
 
-export default function FormScreen({ onResult }: Props) {
+export default function FormScreen({ onResult, onHistory }: Props) {
   const [inputMode, setInputMode] = useState<InputMode>("audio");
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [transcriptText, setTranscriptText] = useState("");
   const [urls, setUrls] = useState(["", "", ""]);
   const [images, setImages] = useState<ImagePicker.ImagePickerAsset[]>([]);
   const [email, setEmail] = useState("");
+
+  useEffect(() => { loadEmail().then(setEmail); }, []);
   const [openVscode, setOpenVscode] = useState(false);
   const [appState, setAppState] = useState<AppState>("idle");
   const [currentStep, setCurrentStep] = useState(0);
@@ -160,9 +164,15 @@ export default function FormScreen({ onResult }: Props) {
       keyboardShouldPersistTaps="handled"
     >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>ProspecMan</Text>
-        <Text style={styles.subtitle}>Briefing de áudio → projeto com IA</Text>
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }} />
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>ProspecMan</Text>
+          <Text style={styles.subtitle}>Briefing de áudio → projeto com IA</Text>
+        </View>
+        <TouchableOpacity style={styles.historyBtn} onPress={onHistory}>
+          <Text style={styles.historyBtnTxt}>📋</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Toggle modo */}
@@ -265,6 +275,7 @@ export default function FormScreen({ onResult }: Props) {
           style={styles.input}
           value={email}
           onChangeText={setEmail}
+          onBlur={() => { if (email.trim()) saveEmail(email.trim()); }}
           placeholder="seu@email.com (opcional)"
           placeholderTextColor={C.textMuted}
           keyboardType="email-address"
@@ -342,7 +353,10 @@ const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: C.bg },
   content: { padding: 20, gap: 16 },
 
-  header: { alignItems: "center", paddingVertical: 8 },
+  headerRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
+  headerCenter: { flex: 1, alignItems: "center" },
+  historyBtn: { width: 40, alignItems: "flex-end" },
+  historyBtnTxt: { fontSize: 22 },
   title: { fontSize: 26, fontWeight: "800", color: C.textPrimary, letterSpacing: -0.5 },
   subtitle: { fontSize: 13, color: C.brand400, opacity: 0.7, marginTop: 4 },
 
