@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, Switch,
+  StyleSheet,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import AudioRecorder from "../components/AudioRecorder";
@@ -36,7 +36,6 @@ export default function FormScreen({ onResult, onHistory }: Props) {
   const [email, setEmail] = useState("");
 
   useEffect(() => { loadEmail().then(setEmail); }, []);
-  const [openVscode, setOpenVscode] = useState(false);
   const [appState, setAppState] = useState<AppState>("idle");
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState("");
@@ -121,7 +120,6 @@ export default function FormScreen({ onResult, onHistory }: Props) {
     });
 
     formData.append("language", "pt");
-    formData.append("open_vscode", String(openVscode));
     if (email.trim()) formData.append("email", email.trim());
 
     // XMLHttpRequest suporta { uri, type, name } para arquivos locais no React Native
@@ -284,16 +282,7 @@ export default function FormScreen({ onResult, onHistory }: Props) {
         />
       </View>
 
-      {/* VS Code toggle */}
-      <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>⌨️  Abrir VS Code ao finalizar</Text>
-        <Switch
-          value={openVscode}
-          onValueChange={setOpenVscode}
-          trackColor={{ false: C.surface700, true: C.brand600 }}
-          thumbColor="#fff"
-        />
-      </View>
+
 
       {/* Loading */}
       {isLoading && (
@@ -425,19 +414,6 @@ const styles = StyleSheet.create({
     maxWidth: 150,
   },
   chipTxt: { color: C.textSecondary, fontSize: 11 },
-
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: C.surface800,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.surface700,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  toggleLabel: { fontSize: 13, color: C.textSecondary },
 
   loadingBox: {
     backgroundColor: C.surface800,

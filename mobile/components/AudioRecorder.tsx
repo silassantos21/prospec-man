@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useAudioRecorder, useAudioRecorderState, AudioModule, RecordingPresets } from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
+import * as Sharing from "expo-sharing";
 import { C } from "../constants";
 
 interface Props {
@@ -45,6 +46,13 @@ export default function AudioRecorder({ recordedUri, onRecorded, onClear }: Prop
     }
   };
 
+  const shareAudio = async () => {
+    if (!recordedUri) return;
+    const available = await Sharing.isAvailableAsync();
+    if (!available) { Alert.alert("Compartilhamento não disponível neste dispositivo."); return; }
+    await Sharing.shareAsync(recordedUri, { mimeType: "audio/m4a", dialogTitle: "Salvar ou compartilhar áudio" });
+  };
+
   if (recordedUri) {
     return (
       <View style={styles.doneBox}>
@@ -53,6 +61,9 @@ export default function AudioRecorder({ recordedUri, onRecorded, onClear }: Prop
           <Text style={styles.doneLabel}>Áudio gravado</Text>
           <Text style={styles.doneSub}>{formatTime(finalSeconds)} · pronto para enviar</Text>
         </View>
+        <TouchableOpacity onPress={shareAudio} style={styles.shareBtn}>
+          <Text style={styles.shareText}>⬇</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={onClear} style={styles.clearBtn}>
           <Text style={styles.clearText}>✕</Text>
         </TouchableOpacity>
@@ -150,6 +161,8 @@ const styles = StyleSheet.create({
   doneText: { flex: 1 },
   doneLabel: { color: C.brand400, fontWeight: "600", fontSize: 14 },
   doneSub: { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  shareBtn: { padding: 4, marginRight: 4 },
+  shareText: { color: C.brand400, fontSize: 18 },
   clearBtn: { padding: 4 },
   clearText: { color: C.textMuted, fontSize: 18 },
 });
