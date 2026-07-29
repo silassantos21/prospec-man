@@ -24,7 +24,12 @@ REGRAS CRÍTICAS:
 3. project_slug: apenas kebab-case sem acentos (ex: "crm-barbearia", "landing-clinica")
 4. Estimativas de tempo realistas: landing page = 1-3 semanas, SaaS completo = 3-6 meses
 5. Custo em USD com conversão BRL usando taxa fornecida no contexto
-6. Agentes de IA devem ser específicos e úteis para ESTE projeto"""
+6. Agentes de IA devem ser específicos e úteis para ESTE projeto
+7. Estime horas de desenvolvimento realistas por fase (`estimated_hours`), considerando a \
+complexidade técnica de cada fase — não apenas a duração em dias corridos
+8. Classifique a complexidade GERAL do projeto (`complexity_level`: baixa/media/alta) com base em \
+integrações externas, número de agentes de IA, originalidade da stack e risco técnico — e justifique \
+essa classificação em `complexity_justification`"""
 
 # Schema legível que Claude consegue seguir com precisão
 JSON_SCHEMA = """
@@ -96,12 +101,14 @@ JSON_SCHEMA = """
       {
         "name": "Nome da Fase",
         "duration_days": 14,
+        "estimated_hours": 40.0,
         "tasks": ["Tarefa detalhada 1", "Tarefa 2", "Tarefa 3"],
         "deliverables": ["Entregável concreto 1", "Entregável 2"]
       }
     ],
     "total_days": 30,
     "total_weeks": 4.3,
+    "total_hours": 120.0,
     "assumptions": ["Premissa que afeta o prazo 1", "Premissa 2"]
   },
   "cost_analysis": {
@@ -139,6 +146,8 @@ JSON_SCHEMA = """
     "roi_analysis": "Análise de retorno sobre investimento: quando o projeto se paga, métricas de sucesso",
     "free_tier_viable": true
   },
+  "complexity_level": "baixa | media | alta",
+  "complexity_justification": "Por que o projeto se encaixa neste nível de complexidade",
   "mvp_scope": ["Feature essencial do MVP 1", "Feature essencial 2"],
   "future_features": ["Feature v2 1", "Feature v2 2"],
   "risks": ["Risco técnico 1: descrição e como mitigar", "Risco de negócio 1"],

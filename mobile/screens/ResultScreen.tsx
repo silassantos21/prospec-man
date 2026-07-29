@@ -15,6 +15,15 @@ type Result = {
   timeline_days: number;
   cost_monthly_brl: number;
   free_tier_viable: boolean;
+  total_hours: number;
+  recommended_price_brl: number;
+  recommended_price_usd: number;
+  pricing: {
+    hourly_rate_brl: number;
+    complexity_level: string;
+    price_range_min_brl: number;
+    price_range_max_brl: number;
+  };
 };
 
 const STACK_LABELS: Record<string, string> = {
@@ -75,6 +84,17 @@ export default function ResultScreen({ result, onNew, onHistory, showBack, onBac
           </Text>
           <Text style={styles.statLabel}>{r.free_tier_viable ? "viável" : "necessário"}</Text>
         </View>
+      </View>
+
+      {/* Preço sugerido */}
+      <View style={styles.priceCard}>
+        <Text style={styles.priceLabel}>💰  Preço sugerido do projeto</Text>
+        <Text style={styles.priceValue}>
+          R$ {r.pricing.price_range_min_brl.toFixed(0)} – R$ {r.pricing.price_range_max_brl.toFixed(0)}
+        </Text>
+        <Text style={styles.priceDetail}>
+          {r.total_hours.toFixed(0)}h estimadas × R$ {r.pricing.hourly_rate_brl.toFixed(0)}/h · complexidade {r.pricing.complexity_level}
+        </Text>
       </View>
 
       {/* Features */}
@@ -160,6 +180,19 @@ const styles = StyleSheet.create({
   statIcon: { fontSize: 20 },
   statValue: { fontSize: 22, fontWeight: "800", marginTop: 4 },
   statLabel: { fontSize: 11, color: C.textMuted, marginTop: 2 },
+
+  priceCard: {
+    backgroundColor: "#052010",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#14532d",
+    padding: 16,
+    alignItems: "center",
+    gap: 4,
+  },
+  priceLabel: { fontSize: 12, color: "#4ade80", fontWeight: "600" },
+  priceValue: { fontSize: 24, fontWeight: "800", color: "#22c55e" },
+  priceDetail: { fontSize: 11, color: C.textMuted, textAlign: "center" },
 
   card: {
     backgroundColor: C.surface800,

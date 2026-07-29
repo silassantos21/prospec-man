@@ -24,6 +24,15 @@ type Result = {
   timeline_days: number;
   cost_monthly_brl: number;
   free_tier_viable: boolean;
+  total_hours: number;
+  recommended_price_brl: number;
+  recommended_price_usd: number;
+  pricing: {
+    hourly_rate_brl: number;
+    complexity_level: string;
+    price_range_min_brl: number;
+    price_range_max_brl: number;
+  };
 };
 
 type Props = { result: Record<string, unknown>; onNew: () => void };
@@ -98,6 +107,19 @@ export default function ProjectResult({ result, onNew }: Props) {
             {r.free_tier_viable ? "viável" : "necessário"}
           </div>
         </div>
+      </div>
+
+      {/* Preço sugerido */}
+      <div className="bg-green-950/40 border border-green-800/50 rounded-xl p-4 text-center">
+        <p className="text-xs text-green-400 font-semibold inline-flex items-center gap-1.5 justify-center">
+          <PaymentsIcon size={14} /> Preço sugerido do projeto
+        </p>
+        <p className="text-2xl font-bold text-green-400 mt-1">
+          R$ {r.pricing.price_range_min_brl.toFixed(0)} – R$ {r.pricing.price_range_max_brl.toFixed(0)}
+        </p>
+        <p className="text-xs text-zinc-500 mt-1">
+          {r.total_hours.toFixed(0)}h estimadas × R$ {r.pricing.hourly_rate_brl.toFixed(0)}/h · complexidade {r.pricing.complexity_level}
+        </p>
       </div>
 
       {/* Funcionalidades */}

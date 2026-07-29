@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     default_output_dir: Path = Field(default=Path("./projects"))
     default_language: str = Field(default="pt")
     usd_to_brl_rate: float = Field(default=5.70)
+    default_hourly_rate_brl: float = Field(default=80.0, description="Valor/hora padrão para estimativa de precificação")
     vscode_command: str = Field(default="code")
     email_user: str = Field(default="")
     email_password: str = Field(default="")

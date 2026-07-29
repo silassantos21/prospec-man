@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from .models import ProjectPlan, ProjectType, TechCategory, TechStack
+from .models import PricingEstimate, ProjectPlan, ProjectType, TechCategory, TechStack
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +360,75 @@ def _doc_cost_analysis(plan: ProjectPlan) -> str:
 """
 
 
-def _generate_claude_md(plan: ProjectPlan) -> str:
+def _doc_pricing(plan: ProjectPlan, pricing: PricingEstimate) -> str:
+    hours_rows = [
+        "| # | Fase | Dias | Horas |",
+        "|---|------|------|-------|",
+    ]
+    for i, phase in enumerate(plan.timeline.phases, 1):
+        hours_rows.append(f"| {i} | {phase.name} | {phase.duration_days} | {phase.estimated_hours:.1f}h |")
+    hours_rows.append(f"| | **Total** | **{plan.timeline.total_days}** | **{pricing.total_hours:.1f}h** |")
+
+    milestones_md = _bullet_list(pricing.payment_milestones)
+
+    return f"""# Estimativa de Investimento e Precificação — {plan.project_name}
+
+> ⚠️ **Documento de uso interno** — apoia a decisão de quanto cobrar do cliente. Não confundir com \
+[05_COST_ANALYSIS.md](05_COST_ANALYSIS.md), que trata do custo *operacional* (infra/APIs) do projeto já pronto.
+
+## Resumo
+
+| Item | Valor |
+|------|-------|
+| Horas totais estimadas | **{pricing.total_hours:.1f}h** |
+| Complexidade do projeto | **{pricing.complexity_level.value}** (multiplicador {pricing.complexity_multiplier:.2f}x) |
+| Valor/hora aplicado | R$ {pricing.hourly_rate_brl:.2f} (USD {pricing.hourly_rate_usd:.2f}) |
+| **Preço sugerido** | **R$ {pricing.price_range_min_brl:.2f} – R$ {pricing.price_range_max_brl:.2f}** |
+
+**Justificativa da complexidade:** {plan.complexity_justification}
+
+---
+
+## Horas por Fase
+
+{chr(10).join(hours_rows)}
+
+---
+
+## Detalhamento do Cálculo
+
+| Etapa | Valor (BRL) | Valor (USD) |
+|-------|-------------|-------------|
+| Subtotal ({pricing.total_hours:.1f}h × R$ {pricing.hourly_rate_brl:.2f}/h) | R$ {pricing.subtotal_brl:.2f} | USD {pricing.subtotal_usd:.2f} |
+| Buffer de complexidade/risco ({pricing.complexity_multiplier:.2f}x) | R$ {pricing.risk_buffer_brl:.2f} | USD {pricing.risk_buffer_usd:.2f} |
+| **Preço recomendado** | **R$ {pricing.recommended_price_brl:.2f}** | **USD {pricing.recommended_price_usd:.2f}** |
+| Faixa sugerida (−10% / +15%) | R$ {pricing.price_range_min_brl:.2f} – R$ {pricing.price_range_max_brl:.2f} | — |
+
+---
+
+## Marcos de Pagamento Sugeridos
+
+{milestones_md}
+
+---
+
+## Evoluções Futuras
+
+{pricing.future_evolution_note}
+
+---
+
+## Como Ajustar Este Valor
+
+Esta é uma estimativa de apoio, não um preço final. Para recalcular com outro valor/hora:
+
+- **CLI:** `python main.py run --hourly-rate <valor>`
+- **API:** envie o campo `hourly_rate_brl` na requisição `POST /projects`
+- Padrão atual: R$ {pricing.hourly_rate_brl:.2f}/hora (configurável em `.env` via `DEFAULT_HOURLY_RATE_BRL`)
+"""
+
+
+def _generate_claude_md(plan: ProjectPlan, pricing: PricingEstimate) -> str:
     stack = plan.tech_stack
 
     stack_lines = []
@@ -399,7 +467,8 @@ Detalhes completos em [docs/02_TECH_STACK.md](docs/02_TECH_STACK.md).
 │   ├── 02_TECH_STACK.md
 │   ├── 03_AI_AGENTS.md
 │   ├── 04_TIMELINE.md
-│   └── 05_COST_ANALYSIS.md
+│   ├── 05_COST_ANALYSIS.md
+│   └── 06_PRICING.md
 ├── src/            # Código-fonte (a criar)
 └── CLAUDE.md       # Este arquivo
 ```
@@ -416,8 +485,9 @@ Prompts completos em [docs/03_AI_AGENTS.md](docs/03_AI_AGENTS.md).
 
 ## Estimativa
 
-- **Total:** {plan.timeline.total_days} dias ({plan.timeline.total_weeks:.1f} semanas)
+- **Total:** {plan.timeline.total_days} dias ({plan.timeline.total_weeks:.1f} semanas) — {pricing.total_hours:.1f}h de desenvolvimento
 - **Custo Mensal:** USD {plan.cost_analysis.total_monthly_usd:.2f} / BRL {plan.cost_analysis.total_monthly_brl:.2f}
+- **Preço Sugerido:** R$ {pricing.price_range_min_brl:.2f} – R$ {pricing.price_range_max_brl:.2f} (ver [docs/06_PRICING.md](docs/06_PRICING.md))
 
 ## Arquitetura
 
@@ -464,7 +534,8 @@ cp .env.example .env
 | [docs/02_TECH_STACK.md](docs/02_TECH_STACK.md) | Stack e justificativas |
 | [docs/03_AI_AGENTS.md](docs/03_AI_AGENTS.md) | Agentes de IA para desenvolvimento |
 | [docs/04_TIMELINE.md](docs/04_TIMELINE.md) | Cronograma detalhado |
-| [docs/05_COST_ANALYSIS.md](docs/05_COST_ANALYSIS.md) | Análise de custos |
+| [docs/05_COST_ANALYSIS.md](docs/05_COST_ANALYSIS.md) | Análise de custos operacionais |
+| [docs/06_PRICING.md](docs/06_PRICING.md) | Estimativa de investimento e precificação (uso interno) |
 
 ---
 
@@ -563,6 +634,7 @@ htmlcov/
 def create_project(
     plan: ProjectPlan,
     output_dir: Path,
+    pricing: PricingEstimate,
     reference_images: list[str] | None = None,
     open_vscode: bool = True,
     vscode_command: str = "code",
@@ -573,6 +645,7 @@ def create_project(
     Args:
         plan: Plano de projeto gerado pelo Claude.
         output_dir: Diretório raiz onde o projeto será criado.
+        pricing: Estimativa de precificação calculada a partir do plano (ver core.pricing).
         reference_images: Caminhos das imagens de referência para copiar.
         open_vscode: Se True, abre o VS Code após criar o projeto.
         vscode_command: Comando do VS Code (padrão: "code").
@@ -617,7 +690,8 @@ def create_project(
         "docs/03_AI_AGENTS.md": _doc_ai_agents(plan),
         "docs/04_TIMELINE.md": _doc_timeline(plan),
         "docs/05_COST_ANALYSIS.md": _doc_cost_analysis(plan),
-        "CLAUDE.md": _generate_claude_md(plan),
+        "docs/06_PRICING.md": _doc_pricing(plan, pricing),
+        "CLAUDE.md": _generate_claude_md(plan, pricing),
         "README.md": _generate_readme(plan, created_at),
         ".gitignore": _get_gitignore(plan),
         "src/.gitkeep": "",

@@ -15,7 +15,8 @@ from pydantic import BaseModel
 from core.ai_planner import generate_project_plan
 from core.audio_transcriber import transcribe_audio
 from core.image_analyzer import analyze_images
-from core.models import ProjectPlan
+from core.models import PricingEstimate, ProjectPlan
+from core.pricing import calculate_pricing
 from core.project_generator import create_project
 from core.web_scraper import format_scraped_content, scrape_urls
 
@@ -57,6 +58,10 @@ class ProjectResponse(BaseModel):
     cost_monthly_usd: float
     cost_monthly_brl: float
     free_tier_viable: bool
+    pricing: PricingEstimate
+    total_hours: float
+    recommended_price_brl: float
+    recommended_price_usd: float
 
 
 @router.post("/projects", response_model=ProjectResponse)
@@ -69,6 +74,7 @@ async def create_project_endpoint(
     open_vscode: bool = Form(default=False),
     images: List[UploadFile] = File(default=[]),
     email: Optional[str] = Form(None),
+    hourly_rate_brl: Optional[float] = Form(None),
 ):
     """
     Gera uma estrutura de projeto completa a partir de briefing.
@@ -79,6 +85,7 @@ async def create_project_endpoint(
     - **images**: imagens de referencia (repita o campo para multiplas)
     - **language**: idioma da transcricao (padrao: pt)
     - **open_vscode**: abrir VS Code apos criar o projeto (padrao: false)
+    - **hourly_rate_brl**: valor/hora para a estimativa de precificacao (padrao: config do servidor)
     """
     if not audio and not transcript:
         raise HTTPException(
@@ -137,6 +144,13 @@ async def create_project_endpoint(
             settings.usd_to_brl_rate,
         )
 
+        # Calculo da precificacao (deterministico, sem IA) a partir das horas/complexidade do plano
+        pricing = calculate_pricing(
+            plan,
+            hourly_rate_brl or settings.default_hourly_rate_brl,
+            settings.usd_to_brl_rate,
+        )
+
         # Criacao da estrutura de pastas no PC
         output_dir = settings.default_output_dir
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -145,6 +159,7 @@ async def create_project_endpoint(
             create_project,
             plan,
             output_dir,
+            pricing,
             image_paths or None,
             open_vscode,
             settings.vscode_command,
@@ -175,6 +190,10 @@ async def create_project_endpoint(
             cost_monthly_usd=plan.cost_analysis.total_monthly_usd,
             cost_monthly_brl=plan.cost_analysis.total_monthly_brl,
             free_tier_viable=plan.cost_analysis.free_tier_viable,
+            pricing=pricing,
+            total_hours=pricing.total_hours,
+            recommended_price_brl=pricing.recommended_price_brl,
+            recommended_price_usd=pricing.recommended_price_usd,
         )
 
     except HTTPException:

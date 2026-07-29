@@ -15,6 +15,12 @@ class ProjectType(str, Enum):
     CHATBOT = "chatbot"
 
 
+class ComplexityLevel(str, Enum):
+    LOW = "baixa"
+    MEDIUM = "media"
+    HIGH = "alta"
+
+
 class TechCategory(BaseModel):
     primary: str = Field(description="Tecnologia principal")
     secondary: list[str] = Field(default=[], description="Bibliotecas e ferramentas")
@@ -58,6 +64,7 @@ class AIAgent(BaseModel):
 class TimelinePhase(BaseModel):
     name: str
     duration_days: int
+    estimated_hours: float = Field(default=0.0, description="Horas de desenvolvimento estimadas nesta fase")
     tasks: list[str]
     deliverables: list[str]
 
@@ -66,7 +73,14 @@ class Timeline(BaseModel):
     phases: list[TimelinePhase]
     total_days: int
     total_weeks: float
+    total_hours: float = Field(default=0.0, description="Soma das horas estimadas de todas as fases")
     assumptions: list[str]
+
+    @model_validator(mode="after")
+    def recompute_total_hours(self) -> "Timeline":
+        """Não confia no total que o Claude reportar — soma as fases para garantir consistência."""
+        self.total_hours = sum(p.estimated_hours for p in self.phases)
+        return self
 
 
 class CostItem(BaseModel):
@@ -104,7 +118,30 @@ class ProjectPlan(BaseModel):
     ai_agents: list[AIAgent]
     timeline: Timeline
     cost_analysis: CostAnalysis
+    complexity_level: ComplexityLevel = Field(default=ComplexityLevel.MEDIUM)
+    complexity_justification: str = Field(default="")
     mvp_scope: list[str]
     future_features: list[str]
     risks: list[str]
     references_summary: str
+
+
+class PricingEstimate(BaseModel):
+    """Estimativa de precificação do serviço (quanto cobrar do cliente), calculada em Python
+    a partir das horas/complexidade que o Claude estimou — não é gerada pela IA."""
+
+    hourly_rate_brl: float
+    hourly_rate_usd: float
+    total_hours: float
+    complexity_level: ComplexityLevel
+    complexity_multiplier: float
+    subtotal_brl: float
+    subtotal_usd: float
+    risk_buffer_brl: float
+    risk_buffer_usd: float
+    recommended_price_brl: float
+    recommended_price_usd: float
+    price_range_min_brl: float
+    price_range_max_brl: float
+    payment_milestones: list[str]
+    future_evolution_note: str

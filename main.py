@@ -15,6 +15,7 @@ from config import get_settings
 from core.ai_planner import generate_project_plan
 from core.audio_transcriber import transcribe_audio
 from core.image_analyzer import analyze_images
+from core.pricing import calculate_pricing
 from core.project_generator import create_project, _open_vscode
 from core.web_scraper import format_scraped_content, scrape_urls
 
@@ -72,6 +73,12 @@ def cli() -> None:
     default=False,
     help="Não abrir o VS Code automaticamente",
 )
+@click.option(
+    "--hourly-rate",
+    type=float,
+    default=None,
+    help="Valor/hora (BRL) para a estimativa de precificação (padrão: config em .env)",
+)
 def run(
     audio: str | None,
     transcript: str | None,
@@ -79,6 +86,7 @@ def run(
     image: tuple[str, ...],
     output: str | None,
     no_vscode: bool,
+    hourly_rate: float | None,
 ) -> None:
     """Processa um briefing e gera a estrutura completa do projeto."""
 
@@ -176,12 +184,20 @@ def run(
             console.print(f"\n[red]Erro ao gerar plano com Claude:[/red] {e}")
             sys.exit(1)
 
+        # Cálculo da precificação (determinístico, sem IA) a partir das horas/complexidade do plano
+        pricing = calculate_pricing(
+            plan,
+            hourly_rate or settings.default_hourly_rate_brl,
+            settings.usd_to_brl_rate,
+        )
+
         # ETAPA 5 — Criação da estrutura de pastas
         task = progress.add_task("[cyan]Criando estrutura de pastas e arquivos...", total=None)
         try:
             project_path = create_project(
                 plan,
                 output_dir,
+                pricing,
                 reference_images=list(image) if image else None,
                 open_vscode=not no_vscode,
                 vscode_command=settings.vscode_command,
@@ -213,6 +229,11 @@ def run(
     result_table.add_row("Free Tier", "✅ Sim" if plan.cost_analysis.free_tier_viable else "⚠️ Requer plano pago")
     result_table.add_row("Agentes IA", str(len(plan.ai_agents)))
     result_table.add_row("Fases do Projeto", str(len(plan.timeline.phases)))
+    result_table.add_row("Complexidade", f"{plan.complexity_level.value} ({pricing.total_hours:.1f}h estimadas)")
+    result_table.add_row(
+        "Preço Sugerido",
+        f"R$ {pricing.price_range_min_brl:.2f} – R$ {pricing.price_range_max_brl:.2f}",
+    )
 
     console.print(
         Panel(
@@ -230,6 +251,7 @@ def run(
     docs_info.append(f"  🤖 docs/03_AI_AGENTS.md\n")
     docs_info.append(f"  📅 docs/04_TIMELINE.md\n")
     docs_info.append(f"  💰 docs/05_COST_ANALYSIS.md\n")
+    docs_info.append(f"  💵 docs/06_PRICING.md\n")
     docs_info.append(f"  📋 CLAUDE.md\n")
     console.print(docs_info)
 
@@ -281,7 +303,8 @@ def test_plan(transcript_text: str, output: str | None) -> None:
 
     try:
         plan = generate_project_plan(transcript_text, "", "", settings.anthropic_api_key)
-        project_path = create_project(plan, output_dir, open_vscode=False)
+        pricing = calculate_pricing(plan, settings.default_hourly_rate_brl, settings.usd_to_brl_rate)
+        project_path = create_project(plan, output_dir, pricing, open_vscode=False)
         console.print(f"[green]Plano gerado:[/green] {project_path}")
         console.print(f"  Nome: {plan.project_name}")
         console.print(f"  Tipo: {plan.project_type.value}")
